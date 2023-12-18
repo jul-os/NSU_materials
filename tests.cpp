@@ -1,0 +1,612 @@
+#include "BitArray.h"
+#include <gtest/gtest.h>
+
+TEST(BitArray, EmptyCreate)
+{
+    BitArray BA;
+    EXPECT_EQ(0, BA.len) << "length != 0";
+    EXPECT_EQ(nullptr, BA.bits) << "length != 0";
+}
+
+TEST(BitArray, Create)
+{
+    BitArray BA1(10);
+    EXPECT_EQ(10, BA1.len) << "test of len";
+    for (int i = 0; i < 10; i++)
+    {
+        EXPECT_FALSE(BA1.bits[i]) << "Test with no value";
+    }
+
+    BitArray BA2(2, 1);
+    bool b[2]{false, true};
+    for (int i = 0; i < BA2.len; i++)
+    {
+        if (b[i])
+        {
+            EXPECT_TRUE(BA2.bits[i]) << "little test" << i;
+        }
+        else
+        {
+            EXPECT_FALSE(BA2.bits[i]) << "little test" << i;
+        }
+    }
+
+    bool a[15]{false, false, false, false, true, true, true, true, true, true, false, false, true, true, true};
+    BitArray BA3(15, 2023);
+    EXPECT_EQ(15, BA3.len);
+    for (int i = 0; i < BA3.len; i++)
+    {
+        for (int i = 0; i < BA3.len; i++)
+        {
+            if (a[i])
+            {
+                EXPECT_TRUE(BA3.bits[i]) << "a little bit big test  " << i;
+            }
+            else
+            {
+                EXPECT_FALSE(BA3.bits[i]) << "a little bit big test  " << i;
+            }
+        }
+    }
+    {
+        testing::internal::CaptureStdout();  // Start capturing stdout
+        BitArray BA4(-1, 2023);
+        std::string output = testing::internal::GetCapturedStdout();
+        EXPECT_EQ(output, "size is less than or equal to 0\n");
+
+        // Additional assertions for the state of BA4 after the error
+        EXPECT_EQ(nullptr, BA4.bits) << "test of negative len";
+        EXPECT_EQ(0, BA4.len) << "test of negative len";
+    }
+
+    {
+        testing::internal::CaptureStdout();  // Start capturing stdout
+        BitArray BA5(5, -1);
+        std::string output = testing::internal::GetCapturedStdout();
+        EXPECT_EQ(output, "value is either less than 0 or too big for the size of the array\n");
+
+        // Additional assertions for the state of BA5 after the error
+        EXPECT_EQ(nullptr, BA5.bits) << "test with negative val";
+        EXPECT_EQ(0, BA5.len) << "test with negative val";
+    }
+    {
+        testing::internal::CaptureStdout();  // Start capturing stdout
+        BitArray BA6(5, 99999);
+        std::string output = testing::internal::GetCapturedStdout();
+        EXPECT_EQ(output, "value is either less than 0 or too big for the size of the array\n");
+
+        // Additional assertions for the state of BA6 after the error
+        EXPECT_EQ(nullptr, BA6.bits) << "test with extra val";
+        EXPECT_EQ(0, BA6.len) << "test with extra val";
+    }
+}
+
+TEST(BitArray, CopyCreate)
+{
+    BitArray BA1(10, 553);
+    BitArray BA2(BA1);
+    EXPECT_EQ(BA1, BA2) << "copy test";
+
+    BitArray BA3;
+    BitArray BA4(BA3);
+    EXPECT_EQ(BA3, BA4) << "empty copy test";
+}
+
+TEST(BitArray, SetOne)
+{
+    BitArray BA1(15, 2023);
+    bool a[15]{false, false, false, false, true, true, true, true, true, true, false, false, true, true, true};
+    BA1.set(15);
+    for (int i = 0; i < BA1.len; i++)
+    {
+        if (a[i])
+        {
+            EXPECT_TRUE(BA1.bits[i]) << "set true test";
+        }
+        else
+        {
+            EXPECT_FALSE(BA1.bits[i]) << "set true test";
+        }
+    }
+
+    BA1.set(16, true);
+    for (int i = 0; i < BA1.len; i++)
+    {
+        if (a[i])
+        {
+            EXPECT_TRUE(BA1.bits[i]) << "more than len set test";
+        }
+        else
+        {
+            EXPECT_FALSE(BA1.bits[i]) << "more than len set test";
+        }
+    }
+
+    BA1.set(-1, true);
+    for (int i = 0; i < BA1.len; i++)
+    {
+        if (a[i])
+        {
+            EXPECT_TRUE(BA1.bits[i]) << "negative adress set test";
+        }
+        else
+        {
+            EXPECT_FALSE(BA1.bits[i]) << "negative adress set test";
+        }
+    }
+
+    a[0] = false;
+    BA1.set(1, false);
+    for (int i = 0; i < BA1.len; i++)
+    {
+        if (a[i])
+        {
+            EXPECT_TRUE(BA1.bits[i]) << "set negative test";
+        }
+        else
+        {
+            EXPECT_FALSE(BA1.bits[i]) << "set negative test";
+        }
+    }
+}
+
+TEST(BitArray, SetAll)
+{
+    BitArray BA1(15, 2023);
+    BA1.set();
+
+    for (int i = 1; i < BA1.len; i++) {
+        EXPECT_TRUE(BA1[i]) << "SetAll test at index " << i;
+    }
+
+    BitArray BA2;
+    BA2.set();
+    EXPECT_EQ(NULL, BA2.bits) << "SetAll empty test";
+    EXPECT_EQ(BA2.len, 0) << "SetAll empty test";
+}
+
+TEST(BitArray, ResetOne)
+{
+    BitArray BA1(15, 2023);
+    bool a[15]{false, false, false, false, true, true, true, true, true, true, false, false, true, true, true};
+    BA1.reset(1);
+    for (int i = 0; i < BA1.len; i++)
+    {
+        if (a[i])
+        {
+            EXPECT_TRUE(BA1.bits[i]) << "reset true test";
+        }
+        else
+        {
+            EXPECT_FALSE(BA1.bits[i]) << "reset true test";
+        }
+    }
+
+    BA1.reset(16);
+    for (int i = 0; i < BA1.len; i++)
+    {
+        if (a[i])
+        {
+            EXPECT_TRUE(BA1.bits[i]) << "more than len reset test";
+        }
+        else
+        {
+            EXPECT_FALSE(BA1.bits[i]) << "more than len reset test";
+        }
+    }
+
+    BA1.reset(-1);
+    for (int i = 0; i < BA1.len; i++)
+    {
+        if (a[i])
+        {
+            EXPECT_TRUE(BA1.bits[i]) << "negative adress reset test";
+        }
+        else
+        {
+            EXPECT_FALSE(BA1.bits[i]) << "negative adress reset test";
+        }
+    }
+}
+
+TEST(BitArray, ResetAll)
+{
+    BitArray BA1(99, 34977870470);
+    BA1.reset();
+    for (int i = 0; i < BA1.len; i++)
+    {
+        EXPECT_FALSE(BA1.bits[i]);
+    }
+
+    BitArray BA2;
+    BA2.reset();
+    EXPECT_EQ(NULL, BA2.bits) << "ResetAll empty test";
+    EXPECT_EQ(BA2.len, 0) << "ResetAll empty test";
+}
+
+TEST(BitArray, any)
+{
+    BitArray BA1(15, 2023);
+    EXPECT_TRUE(BA1.any()) << "true any test";
+
+    BitArray BA2(15);
+    EXPECT_FALSE(BA2.any()) << "false any test";
+
+    BitArray BA3;
+    EXPECT_FALSE(BA3.any()) << "empty any test";
+}
+
+TEST(BitArray, none)
+{
+
+    BitArray BA1(15, 2023);
+    EXPECT_FALSE(BA1.none()) << "false none test";
+
+    BitArray BA2(15);
+    EXPECT_TRUE(BA2.none()) << "true none test";
+
+    BitArray BA3;
+    EXPECT_TRUE(BA3.none()) << "empty none test";
+}
+
+TEST(BitArray, empty)
+{
+    BitArray BA1;
+    EXPECT_TRUE(BA1.empty()) << "true empty test";
+
+    BitArray BA2(15, 2023);
+    EXPECT_FALSE(BA2.empty()) << "false empty test";
+}
+
+TEST(BitArray, size)
+{
+    BitArray BA1(15, 2023);
+    EXPECT_EQ(BA1.len, BA1.size()) << "size test";
+
+    BitArray BA2;
+    EXPECT_EQ(BA2.len, BA2.size()) << "empty size test";
+}
+
+TEST(BitArray, count)
+{
+    BitArray BA1(15, 2023);
+    EXPECT_EQ(9, BA1.count()) << "count test";
+
+    BitArray BA2;
+    EXPECT_EQ(0, BA2.count()) << "empty count test";
+}
+
+TEST(BitArray, clear)
+{
+    BitArray BA(10, 2023);
+    BA.clear();
+    EXPECT_EQ(0, BA.len) << "len clear test";
+    EXPECT_EQ(NULL, BA.bits) << "bits clear test";
+}
+
+TEST(BitArray, resize)
+{
+    BitArray BA1(15, 2023), BA2(20, 2023), BA4(10,252), BA3(8, 252);
+    BA1.resize(20, false);
+    EXPECT_EQ(BA1.len, BA2.len) << "increase resize len test";
+    for (int i = 0; i < BA2.len; i++)
+    {
+        if (BA2.bits[i])
+        {
+            EXPECT_TRUE(BA1.bits[i]) << "increase resize bit test";
+        }
+        else
+        {
+            EXPECT_FALSE(BA1.bits[i]) << "increase resize bit test";
+        }
+    }
+
+    BA4.resize(8, false);
+    EXPECT_EQ(BA4.len, BA3.len) << "decrease resize len test";
+    for (int i = 0; i < BA3.len; i++)
+    {
+        if (BA3.bits[i])
+        {
+            EXPECT_TRUE(BA4.bits[i]) << "decrease resize bit test";
+        }
+        else
+        {
+            EXPECT_FALSE(BA4.bits[i]) << "decrease resize bit test";
+        }
+    }
+}
+
+TEST(BitArray, swap)
+{
+    BitArray BA1(15, 2023), BA2(BA1), BA3(20, 2004), BA4(BA3);
+    BA2.resize(20);
+    BA1.swap(BA1, BA3);
+    std::cout << BA1.to_string() << std::endl;
+    std::cout << BA3.to_string() << std::endl;
+    for (int i = 0; i < BA2.len; i++)
+    {
+        if (BA2.bits[i])
+        {
+            EXPECT_TRUE(BA3.bits[i]) << "swap test";
+        }
+        else
+        {
+            EXPECT_FALSE(BA3.bits[i]) << "swap test";
+        }
+    }
+
+    for (int i = 0; i < BA4.len; i++)
+    {
+        if (BA4.bits[i])
+        {
+            EXPECT_TRUE(BA1.bits[i]) << "swap test";
+        }
+        else
+        {
+            EXPECT_FALSE(BA1.bits[i]) << "swap test";
+        }
+    }
+}
+
+TEST(BitArray, push_back)
+{
+    BitArray BA1(15, 2023), BA2(16, 34791);
+    BA1.push_back(true);
+    EXPECT_EQ(BA1.len, BA2.len) << "push_back len test";
+    for (int i = 0; i < BA2.len; i++)
+    {
+        if (BA2.bits[i])
+        {
+            EXPECT_TRUE(BA2.bits[i]) << "push_back bits test";
+        }
+        else
+        {
+            EXPECT_FALSE(BA2.bits[i]) << "push_back bits test";
+        }
+    }
+}
+
+TEST(BitArray, to_string)
+{
+    BitArray BA1(15, 2023), BA2;
+    EXPECT_EQ("000011111100111", BA1.to_string()) << "to_string test";
+    EXPECT_EQ("", BA2.to_string()) << "empty to_string test";
+}
+
+TEST(BitArray, OperatorElement)
+{
+    BitArray BA(15, 2023);
+    EXPECT_FALSE(BA.operator[](1)) << "true operator[] test";
+    EXPECT_TRUE(BA.operator[](7)) << "false operator[] test";
+    EXPECT_FALSE(BA.operator[](-1)) << "negative val operator[] test";
+    EXPECT_FALSE(BA.operator[](16)) << "extra val operator[] test";
+}
+
+TEST(BitArray, OperatorEqually)
+{
+    BitArray BA1(15, 2023), BA2(15, 20319);
+    bool b[] = {false, true, true, false, true, true, true, false, true, false,false, false, true, true, true};
+    BA1.operator=(BA2);
+    for (int i = 0; i < 15; i++)
+    {
+        if (b[i])
+        {
+            EXPECT_TRUE(BA1.bits[i]) << "operator= test";
+        }
+        else
+        {
+            EXPECT_FALSE(BA1.bits[i]) << "operator= test";
+        }
+    }
+}
+
+TEST(BitArray, OperatorAnd)
+{
+    BitArray BA1(15, 2023), BA2(15, 20319);
+    bool b[]={false, false, false, false, true, true, true, false, true, false, false, false, true, true, true};
+    BA1.operator&=(BA2);
+    for (int i = 0; i < 15; i++)
+    {
+        if (b[i])
+        {
+            EXPECT_TRUE(BA1.bits[i]) << "operator&= test";
+        }
+        else
+        {
+            EXPECT_FALSE(BA1.bits[i]) << "operator&= test";
+        }
+    }
+}
+
+TEST(BitArray, OperatorNotEqually)
+{
+    BitArray BA1(15, 2023), BA2(15, 20319);
+    bool b[] = {true, false, false, true, false, false, false, true, false, true, true, true, false, false, false };
+    BA1.operator^=(BA2);
+    for (int i = 0; i < 15; i++)
+    {
+        if (b[i])
+        {
+            EXPECT_TRUE(BA1.bits[i]) << "operator^= test";
+        }
+        else
+        {
+            EXPECT_FALSE(BA1.bits[i]) << "operator^= test";
+        }
+    }
+}
+
+TEST(BitArray, OperatorOr)
+{
+    BitArray BA1(15, 2023), BA2(15, 20319);
+    bool b[] = {true, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true};
+    BA1.operator|=(BA2);
+    for (int i = 0; i < 15; i++)
+    {
+        if (b[i])
+        {
+            EXPECT_TRUE(BA1.bits[i]) << "operator|= test";
+        }
+        else
+        {
+            EXPECT_FALSE(BA1.bits[i]) << "operator|= test";
+        }
+    }
+}
+
+TEST(BitArray, OperatorInversion)
+{
+    BitArray BA1(15, 2023), BA2 = BA1.operator~();
+
+    for (int i = 0; i < BA1.len; i++)
+    {
+        if (!BA1.bits[i])
+        {
+            EXPECT_TRUE(BA2.bits[i]) << "operator~ test";
+        }
+        else
+        {
+            EXPECT_FALSE(BA2.bits[i]) << "operator~ test";
+        }
+    }
+}
+
+TEST(BitArray, OperatorLShift)
+{
+    BitArray BA1(15, 2023);
+    bool b[] = {true, true, true,true,true, false, false, true,true,true, false,false,false,false, true };
+    BA1.operator<<=(5);
+    for (int i = 0; i < BA1.len; i++)
+    {
+        if (b[i])
+        {
+            EXPECT_TRUE(BA1.bits[i]) << "operator<<= test";
+        }
+        else
+        {
+            EXPECT_FALSE(BA1.bits[i]) << "operator<<= test";
+        }
+    }
+}
+
+TEST(BitArray, OperatorRShift)
+{
+    BitArray BA1(15, 2023);
+    bool  b[] = {false, false, true, true, true, false, false, false, false, true, true, true, true, true, true};
+    BA1.operator>>=(5);
+    for (int i = 0; i < BA1.len; i++)
+    {
+        if (b[i])
+        {
+            EXPECT_TRUE(BA1.bits[i]) << "operator>>= test" << i;
+        }
+        else
+        {
+            EXPECT_FALSE(BA1.bits[i]) << "operator>>= test" << i;
+        }
+    }
+}
+
+TEST(BitArray, OperatorLShiftConst)
+{
+    BitArray BA1(15, 2023), BA3 = BA1.operator<<(5);
+    bool b[] = {true, true, true,true,true, false, false, true,true,true, false,false,false,false, true };
+
+    for (int i = 0; i < BA1.len; i++)
+    {
+        if (b[i])
+        {
+            EXPECT_TRUE(BA3.bits[i]) << "operator<< test";
+        }
+        else
+        {
+            EXPECT_FALSE(BA3.bits[i]) << "operator<< test";
+        }
+    }
+}
+
+TEST(BitArray, OperatorRShiftConst)
+{
+    BitArray BA1(15, 2023), BA3 = BA1.operator>>(5);
+    bool  b[] = {false, false, true, true, true, false, false, false, false, true, true, true, true, true, true};
+
+    for (int i = 0; i < BA1.len; i++)
+    {
+        if (b[i])
+        {
+            EXPECT_TRUE(BA3.bits[i]) << "operator>> test";
+        }
+        else
+        {
+            EXPECT_FALSE(BA3.bits[i]) << "operator>> test";
+        }
+    }
+}
+
+TEST(comparison, equality)
+{
+    BitArray BA1(15, 2023), BA2(15, 2023);
+    EXPECT_TRUE(operator==(BA1, BA2)) << "true operator== test";
+    BA1.reset(14);
+    EXPECT_FALSE(operator==(BA1, BA2)) << "false operator== test";
+}
+
+TEST(comparison, unequality)
+{
+    BitArray BA1(15, 2023), BA2(15, 2023);
+    EXPECT_FALSE(operator!=(BA1, BA2)) << "false operator!= test";
+    BA1.reset(14);
+    EXPECT_TRUE(operator!=(BA1, BA2)) << "true operator== test";
+}
+
+TEST(ClasslessOperators, OperatorAnd)
+{
+    BitArray BA1(15, 2023), BA2(15, 20319), BA4 = operator&(BA1, BA2);
+    bool b[]={false, false, false, false, true, true, true, false, true, false, false, false, true, true, true};
+    for (int i = 1; i <= BA1.size(); i++)
+    {
+        if (b[i-1])
+        {
+            EXPECT_TRUE(BA4.operator[](i)) << "operator&= test";
+        }
+        else
+        {
+            EXPECT_FALSE(BA4.operator[](i)) << "operator&= test";
+        }
+    }
+}
+
+TEST(ClasslessOperators, OperatorOr)
+{
+    BitArray BA1(15, 2023), BA2(15, 20319), BA4 = operator|(BA1, BA2);
+    bool b[] = {true, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true};
+    for (int i = 1; i <= BA1.size(); i++)
+    {
+        if (b[i-1])
+        {
+            EXPECT_TRUE(BA4.operator[](i)) << "operator&= test";
+        }
+        else
+        {
+            EXPECT_FALSE(BA4.operator[](i)) << "operator&= test";
+        }
+    }
+}
+
+TEST(ClasslessOperators, OperatorNotEqually)
+{
+    BitArray BA1(15, 2023), BA2(15, 20319), BA4 = operator^(BA1, BA2);
+    bool b[] = {true, false, false, true, false, false, false, true, false, true, true, true, false, false, false };
+    for (int i = 1; i <= BA1.size(); i++)
+    {
+        if (b[i-1])
+        {
+            EXPECT_TRUE(BA4.operator[](i)) << "operator&= test";
+        }
+        else
+        {
+            EXPECT_FALSE(BA4.operator[](i)) << "operator&= test";
+        }
+    }
+}
+
