@@ -1,289 +1,463 @@
-//what's inside the functions
-#include "naming.h"
+#include "BitArray.h"
+#include <algorithm>
 
-BitArray::BitArray() {
-	len = 0;
-	bits = NULL;
+// it's better to compile using g++
+
+BitArray::BitArray()
+{
+    len = 0;
+    bits = nullptr;
 }
 
-BitArray::~BitArray(){}
+BitArray::~BitArray() {}
+// If first variable is less than 0, bit array will be made such as BitArray()
+// If second variable is less than zero or more than square of first variable array, value = 0
+BitArray::BitArray(int size, unsigned long val)
+{
+    if ((size <= 0))
+    {
+        std::cout << "size is less than or equal to 0" << std::endl;
+        len = 0;
+        bits = nullptr;
+        return;
+    }
+    //we need to ensure that the value is not negative. unsigned type, if given a negative value, overflows
+    //and produces the value too big. By this condition we ensure that the given valuable is not negative
+    //here we also ensure that the value can be represented as a bitarray of the desired size
+    else if ((val > std::numeric_limits<unsigned long>::max() - std::pow(2, size)) || (val >= std::pow(2, size)))
+    {
+        std::cout << "value is either less than 0 or too big for the size of the array" << std::endl;
+        len = 0;
+        bits = nullptr;
+        return;
+    }
 
+    len = size;
+    bits = new bool[len];
 
-  // If first variable is less than 0, bit array will be made such as BitArray()
-  // If second variable is less than zero or more than square of first variable array, value = 0
-BitArray::BitArray(int size, unsigned long val) {
-	if ((size <= 0)) {
-		len = 0;
-		bits = NULL;
-		return;
-	}
-	else if ((val < 0) || (val > std::pow(2, size)))
-		val = 0;
-	len = size;
-	bits = new bool[len];
+    unsigned long SafeVal = val;
+    int degree = 0;
 
-	unsigned long SafeVal = val;
-	int degree = 0;
-	while ((val > 0) && (degree < len)) {
-		val /= 2;
-		degree++;
-	}
+    // Calculate the number of bits needed to represent 'val' in binary
+    while ((val > 0) && (degree < len))
+    {
+        val /= 2;
+        degree++;
+    }
 
-	int i = 0;
-	while(i < degree){
-		if (SafeVal % 2 == 0)
-			bits[degree - i - 1] = false;
-		i++;
-		SafeVal = SafeVal / 2;
-	}
-	if (degree != len)
-		for (int i = degree; i < len; i++)
-			bits[i] = false;
+    int i = 0;
+    // Fill the 'bits' array with the binary representation of 'SafeVal'
+    if (degree != len)
+        // if the size of bitarray is bigger than the needed length of the number
+    {
+        while (i < degree)
+        {
+            bits[(len - degree) + degree - i - 1] = (SafeVal % 2 != 0);
+            i++;
+            SafeVal = SafeVal / 2;
+        }
+        for (int i =0; i < len - degree; i++){
+            bits[i]=0;
+        }
+
+    }
+    else
+    {
+        // if just right
+        while (i < degree)
+        {
+            bits[degree - i - 1] = (SafeVal % 2 != 0);
+            i++;
+            SafeVal = SafeVal / 2;
+        }
+    }
+
+    for (int i = 0; i < len; i++)
+    {
+        std::cout << bits[i] << " ";
+    }
+    std::cout << std::endl;
 }
 
-BitArray::BitArray(const BitArray& b) {
-	len = b.len;
-	bits = new bool[len];
-	for (int i = 0; i < b.len; i++)
-		bits[i] = b.bits[i];
+BitArray::BitArray(const BitArray &b)
+{
+    len = b.len;
+    bits = new bool[len];
+    for (int i = 0; i < b.len; i++)
+    {
+        bits[i] = b.bits[i];
+    }
 }
 
-BitArray& BitArray::set(int index, bool val) {
-	if (index < 1 || index > len)
-		return *this;
-	bits[index - 1] = val;
-	return *this;
+//Sets bit index n to value val.
+BitArray &BitArray::set(int index, bool val)
+{
+    if (index < 1 || index > len)
+    {
+        return *this;
+    }
+    bits[index - 1] = val;
+    return *this;
 }
 
-BitArray& BitArray::set() {
-	for (int i = 0; i < len; i++)
-		bits[i] = true;
-	return *this;
+// Fills array with true (1).
+BitArray &BitArray::set()
+{
+    for (int i = 0; i < len; i++)
+    {
+        bits[i] = true;
+    }
+    return *this;
 }
 
-BitArray& BitArray::reset(int index) {
-	if (index < 1 || index > len - 1)
-		return *this;
-	bits[index - 1] = false;
-	return *this;
+// Sets bit index n to value false (0).
+BitArray &BitArray::reset(int index)
+{
+    if (index < 1 || index > len - 1)
+    {
+        return *this;
+    }
+    bits[index - 1] = false;
+    return *this;
 }
 
-BitArray& BitArray::reset() {
-	for (int i = 0; i < len; i++)
-		bits[i] = false;
-	return *this;
+// Fills array with false(0).
+BitArray &BitArray::reset()
+{
+    for (int i = 0; i < len; i++)
+    {
+        bits[i] = false;
+    }
+    return *this;
 }
 
-bool BitArray::any() const {
-	for (int i = 0; i < len; i++)
-		if (bits[i]) 
-			return true;
-	return false;
+// true if the array contains a true bit.
+bool BitArray::any() const
+{
+    for (int i = 0; i < len; i++)
+    {
+        if (bits[i])
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
-bool BitArray::none() const {
-	return !any();
+// true if every bit in array is false.
+bool BitArray::none() const
+{
+    return !any();
 }
 
-bool BitArray::empty() const {
-	return len == 0;
+// Returns true if length of array is 0
+bool BitArray::empty() const
+{
+    return len == 0;
 }
 
-int BitArray::size() const {
-	return len;
+// Returns length of the array
+int BitArray::size() const
+{
+    return len;
 }
 
-int BitArray::count() const {
-	int amount = 0;
-	for (int i = 0; i < len; i++)
-		if (bits[i])
-			amount++;
-	return amount;
+//counts number of true bits
+int BitArray::count() const
+{
+    int amount = 0;
+    for (int i = 0; i < len; i++)
+    {
+        if (bits[i])
+        {
+            amount++;
+        }
+    }
+    return amount;
 }
 
-void BitArray::resize(int n, bool value) {
-	if (n < 0)
-		return;
+// Changes the size of the array. In case of expansion, new elements
+// initialized with value.
+void BitArray::resize(int n, bool value)
+{
+    if (n < 0)
+    {
+        return;
+    }
+    BitArray old(*this);
+    delete[] bits;
+    bits = new bool[n];
+    len = n;
 
-	BitArray old(*this);
-	delete[] bits;
-	bits = new bool[n];
-	len = n;
-
-	if (this->size() > old.size()) {
-		for (int i = 0; i < old.size(); i++)
-			bits[i] = old.bits[i];
-		for (int i = old.size(); i < n; i++)
-			bits[i] = value;
-	}
-	else {
-		for (int i = 0; i < n; i++)
-			bits[i] = old.bits[i];
-
-	}
+    if (this->size() > old.size())
+    {
+        for (int i = 0; i < old.size(); i++)
+        {
+            bits[n - old.size() + i] = old.bits[i];
+        }
+        for (int i = 0; i < n - old.size(); i++)
+        {
+            bits[i] = value;
+        }
+    }
+    else
+    {
+        for (int i = 0; i < n; i++)
+        {
+            bits[i] = old.bits[old.size() - n + i];
+        }
+    }
 }
 
-void BitArray::swap(BitArray& bits1, BitArray& bits2) {
-	if (bits1.len < bits2.len)
-		bits1.resize(bits2.len, false);
-	else
-		bits2.resize(bits1.len, false);
-	for (int i = 0; i < bits1.len; i++)
-		if (bits1.bits[i] && !bits2.bits[i]){
-			bits1.bits[i] = false;
-			bits2.bits[i] = true;
-		}
-		else if (!bits1.bits[i] && bits2.bits[i]) {
-			bits1.bits[i] = true;
-			bits2.bits[i] = false;
-		}
+// Exchanges the values of two bitarrays.
+void BitArray::swap(BitArray &bits1, BitArray &bits2)
+{
+    if (bits1.len < bits2.len)
+    {
+        bits1.resize(bits2.len, false);
+    }
+    else
+    {
+        bits2.resize(bits1.len, false);
+    }
+    for (int i = 0; i < bits1.len; i++)
+        if (bits1.bits[i] && !bits2.bits[i])
+        {
+            bits1.bits[i] = false;
+            bits2.bits[i] = true;
+        }
+        else if (!bits1.bits[i] && bits2.bits[i])
+        {
+            bits1.bits[i] = true;
+            bits2.bits[i] = false;
+        }
 }
 
-
-
-void BitArray::push_back(bool val) {
-	this->resize(this->len + 1, val);
+// Adds a new bit to the end of the array. If necessary
+// memory redistribution occurs.
+void BitArray::push_back(bool val)
+{
+    this->resize(this->len + 1, val);
 }
 
-std::string BitArray::to_string() const {
-	std::string output;
-	for (int i = 0; i < len; i++)
-		if (bits[i])
-			output += "1";
-		else
-			output += "0";
-	return output;
+//Returns string representation of array.
+std::string BitArray::to_string() const
+{
+    std::string output;
+    for (int i = 0; i < len; i++)
+    {
+        if (bits[i])
+        {
+            output += "1";
+        }
+        else
+        {
+            output += "0";
+        }
+    }
+    return output;
 }
 
-BitArray& BitArray::operator=(const BitArray& second) {
-	if (second.len != len)
-		return*this;
-	for (int i = 0; i < len; i++)
-		if (bits[i] == second.bits[i])
-			bits[i] = true;
-		else
-			bits[i] = false;
-	return *this;
+BitArray &BitArray::operator=(const BitArray &second)
+{
+    if (second.len != len)
+    {
+        return *this;
+    }
+    for (int i = 0; i < len; i++)
+    {
+        bits[i] = (bits[i] == second.bits[i]);
+    }
+    return *this;
 }
 
-BitArray& BitArray::operator&=(const BitArray& second) {
-	if (second.len != len)
-		return*this;
-	for (int i = 0; i < len; i++)
-		if (bits[i] && second.bits[i])
-			bits[i] = true;
-		else
-			bits[i] = false;
-	return *this;
+// makes all bits perform the && operation with each bit of the array in pairs
+BitArray &BitArray::operator&=(const BitArray &second)
+{
+    if (second.len != len)
+    {
+        return *this;
+    }
+    for (int i = 0; i < len; i++)
+    {
+            bits[i] = (bits[i] && second.bits[i]);
+    }
+    return *this;
 }
 
-BitArray& BitArray::operator|=(const BitArray& second) {
-	if (second.len != len)
-		return*this;
-	for (int i = 0; i < len; i++)
-		if (bits[i] || second.bits[i])
-			bits[i] = true;
-		else
-			bits[i] = false;
-	return *this;
+// makes all bits perform the || operation with each bit of the array in pairs
+BitArray &BitArray::operator|=(const BitArray &second)
+{
+    if (second.len != len)
+    {
+        return *this;
+    }
+    for (int i = 0; i < len; i++)
+    {
+        bits[i] = (bits[i] || second.bits[i]);
+    }
+    return *this;
 }
 
-BitArray& BitArray::operator^=(const BitArray& second) {
-	if (second.len != len)
-		return*this;
-	for (int i = 0; i < len; i++)
-		if (bits[i] ^ second.bits[i])
-			bits[i] = true;
-		else
-			bits[i] = false;
-	return *this;
-}
-BitArray BitArray::operator~() const {
-	BitArray a(this->size());
-	for (int i = 0; i < len; i++)
-			a.bits[i] = !bits[i];
-	return a;
+// makes all bits perform the != operation with each bit of the array in pairs
+BitArray &BitArray::operator^=(const BitArray &second)
+{
+    if (second.len != len)
+    {
+        return *this;
+    }
+    for (int i = 0; i < len; i++)
+    {
+        bits[i] = (bits[i] ^ second.bits[i]);
+    }
+    return *this;
 }
 
-BitArray& BitArray::operator<<=(int val) {
-	if (val < 1)
-		return *this;
-	if (val >= len) {
-		for (int i = 0; i < len; i++)
-			bits[i] = false;
-		return *this;
-	}
-
-	for (int i = 0; i < len - val; i++)
-		bits[i] = bits[i + val];
-	for (int i = len - val; i < len; i++)
-		bits[i] = false;
-	return *this;
+// Bit inversion
+BitArray BitArray::operator~() const
+{
+    BitArray a(this->size());
+    for (int i = 0; i < len; i++)
+    {
+        a.bits[i] = !bits[i];
+    }
+    return a;
 }
 
-BitArray& BitArray::operator>>=(int val) {
-	if (val < 1)
-		return *this;
-	if (val >= len) {
-		for (int i = 0; i < len; i++)
-			bits[i] = false;
-		return *this;
-	}
+// Performs a bitwise shift to the left in a given variable
+BitArray &BitArray::operator<<=(int val)
+{
+    if (val < 1)
+    {
+        return *this;
+    }
+    if (val >= len)
+    {
+        for (int i = 0; i < len; i++)
+        {
+            bits[i] = false;
+        }
+        return *this;
+    }
 
-	for (int i = len; i > val; i--)
-		bits[i] = bits[i - val];
-	for (int i = 0; i < val; i++)
-		bits[i] = false;
-	return *this;
+    BitArray old(*this);
+    delete[] bits;
+    bits = new bool[len];
+
+    for (int i = 0; i < len - val; i++)
+    {
+        bits[i] = old.bits[i + val];
+    }
+    for (int i = 0; i < val; i++)
+    {
+        bits[len - val + i] = old.bits[i];
+    }
+    return *this;
 }
 
-BitArray BitArray::operator<<(int val) const {
-	BitArray output(*this);
-	return output.operator<<=(val);
+// Performs a bitwise shift to the right in a given variable
+BitArray &BitArray::operator>>=(int val)
+{
+    if (val < 1)
+    {
+        return *this;
+    }
+    if (val >= len)
+    {
+        for (int i = 0; i < len; i++)
+        {
+            bits[i] = false;
+        }
+        return *this;
+    }
+
+    BitArray old(*this);
+    delete[] bits;
+    bits = new bool[len];
+
+    for (int i = len; i > val; i--)
+    {
+        bits[i] = old.bits[i - val];
+    }
+    for (int i = 0; i < val; i++)
+    {
+        bits[i] = old.bits[len - val + i];
+    }
+    return *this;
 }
 
-BitArray BitArray::operator>>(int val) const {
-	BitArray output(*this);
-	return output.operator>>=(val);
+// returns a variable with a bitwise shift to the left
+BitArray BitArray::operator<<(int val) const
+{
+    BitArray output(*this);
+    return output.operator<<=(val);
 }
 
-bool BitArray::operator[](int val) const {
-	if (val < 0 || val > len)
-		return false;
-	return bits[val - 1];
+// returns a variable with a bitwise shift to the right
+BitArray BitArray::operator>>(int val) const
+{
+    BitArray output(*this);
+    return output.operator>>=(val);
 }
 
-void BitArray::clear() {
-	len = 0;
-	bits = NULL;
+// Returns the value of the bit at index i
+bool BitArray::operator[](int val) const
+{
+    if (val < 1 || val > len)
+    {
+        return false;
+    }
+    return bits[val - 1];
 }
 
-bool operator==(const BitArray& a, const BitArray& b) {
-	if (a.size() != b.size())
-		return false;
-	for (int i = 0; i < a.size(); i++)
-		if (a.operator[](i) != b.operator[](i))
-			return false;
-	return true;
+// Clears bitarray
+void BitArray::clear()
+{
+    len = 0;
+    delete[] bits;
+    bits = nullptr;
 }
 
-bool operator!=(const BitArray& a, const BitArray& b) {
-	return !(operator==(a, b));
+// returns true if arrays are equal and false if not
+bool operator==(const BitArray &a, const BitArray &b)
+{
+    if (a.size() != b.size())
+    {
+        return false;
+    }
+    for (int i = 0; i < a.size(); i++)
+    {
+        if (a.operator[](i) != b.operator[](i))
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
-BitArray operator&(const BitArray& a, const BitArray& b) {
-	BitArray c(a);
-	return c.operator&=(b);
+// returns false if arrays are equal and true if not
+bool operator!=(const BitArray &a, const BitArray &b)
+{
+    return !(operator==(a, b));
 }
 
-BitArray operator|(const BitArray& a, const BitArray& b) {
-	BitArray c(a);
-	return c.operator|=(b);
+// Performs the operation &&
+BitArray operator&(const BitArray &a, const BitArray &b)
+{
+    BitArray c(a);
+    return c.operator&=(b);
 }
 
-BitArray operator^(const BitArray& a, const BitArray& b) {
-	BitArray c(a);
-	return c.operator^=(b);
+// Performs the operation ||
+BitArray operator|(const BitArray &a, const BitArray &b)
+{
+    BitArray c(a);
+    return c.operator|=(b);
 }
 
-
+// Performs the operation !=
+BitArray operator^(const BitArray &a, const BitArray &b)
+{
+    BitArray c(a);
+    return c.operator^=(b);
+}
